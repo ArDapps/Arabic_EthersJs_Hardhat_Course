@@ -1,50 +1,112 @@
 import { ethers } from 'ethers'
 import { useEffect } from 'react'
 import { useState } from 'react'
+import abiInterface  from './../public/artifacts/contracts/MetaMessage.sol/MetaMessage.json'
 
-import abi from "../public/artifacts/usdtABI.json"
+
 
 export default function Home() {
-
-  const[name,setName] = useState("")
-  const[symb,setSymb] = useState("")
-  const [userBlnc,setUserBlnc] = useState("")
-
-  const [block,setBlock] = useState("")
+    const[message,setMessage]= useState("")
+    const[newMessage,setNewMessage]= useState("")
 
 
-  const[balance,setBalance]=useState("0")
-  const mainNetEndPoint = "https://goerli.infura.io/v3/47b829e7e62f4ccfa9fe9dbd1bde1714"
+    const connectWallet = async()=>{
+        const pro= await window.ethereum.request({method:"eth_requestAccounts"});
+        console.log(pro)
+    }
 
-  const provider = new ethers.providers.JsonRpcProvider(mainNetEndPoint)
+  const contractAddress = "0x6783F18A8Aab462c8251E7dC366be0749C59f1fa"
+const GetMetaverseMessage = async ()=>{
+    if(typeof window.ethereum !=="undefined"){
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const contract = new ethers.Contract(contractAddress,abiInterface.abi,provider)
 
-  const private_key = "734c8cb691544efac0bab296fb3f1b62f25f15edc47d376af2b0ddc667106956"
+        try {
+            const msg = await contract.getMessage();
+            console.log(msg)
+            setMessage(msg)
 
-  const reciver = "0x3E8e026e4E3074a321dCe36477619E5BA6f9dD9c"
-  const wallet = new ethers.Wallet(private_key,provider)
-
-  const sendTransaction = async()=>{
-      
-
-    const transaction = await wallet.sendTransaction({to:reciver,value:ethers.utils.parseEther("0.2")})
-
-    await transaction.wait()
-    console.log(transaction);
-    
-
-  }
+                } catch (error) {
+            console.log(error)
+        }
 
 
 
-  useEffect(()=>{
-  },[])
+    }else{
+        console.log("Please install metamask wallet")
+
+    }
+
+}
+
+const changeMessage =  async ()=>{
+
+   if(!newMessage)return;
+   if(typeof window.ethereum !=="undefined"){
+    await connectWallet();
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+
+    const signer = provider.getSigner()
+    const contract = new ethers.Contract(contractAddress,abiInterface.abi,signer)
+
+    try {
+        const changeMsg = await contract.changeMessage(newMessage);
+        await changeMsg.wait()
+        await GetMetaverseMessage()
+        setNewMessage("")
+            } catch (error) {
+        console.log(error)
+    }
 
 
 
+}else{
+    console.log("Please install metamask wallet")
+
+}
+
+}
 
   return (
     <div  className='m-5'>
-      <h2 className='btn btn-outline-danger text-center'>Welceome to Send Ethererum Transaction</h2>
+      <h2 className='btn btn-outline-info text-center'>Welceome to Metaverse Data Center </h2>
+      <br/>
+      <button type="button" className="btn btn-danger" onClick={GetMetaverseMessage}>What is the message ???</button>
+      <br/>
+
+{
+    message?      <div className='m-3'>
+    <div className="card">
+<div className="card-header">
+  Hello ""
+</div>
+<div className="card-body">
+  <blockquote className="blockquote mb-0">
+    <p>{message}</p>
+    <footer className="blockquote-footer">Let`s change teh metaverse message` <cite title="Source Title">Source Title</cite></footer>
+  </blockquote>
+</div>
+</div>
+    </div>
+:""
+}
+<h2 className='btn btn-outline-warning text-center'>You can change the Metaverse Message now by Small Fees </h2>
+      <br/>
+<div>
+<div class="input-group flex-nowrap">
+  <span class="input-group-text" id="addon-wrapping">@</span>
+  <input type="text" onChange={(e)=>setNewMessage(e.target.value)}
+  value={newMessage}
+
+   className="form-control" placeholder="Write your Message" aria-label="Username" aria-describedby="addon-wrapping"/>
+</div>
+</div>
+
+<br/>
+      <button type="button" className="btn btn-success"  onClick={changeMessage}>Pay and Save your Message</button>
+      <br/>
+
+
 
     </div>
   )
