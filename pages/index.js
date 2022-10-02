@@ -1,112 +1,65 @@
 import { ethers } from 'ethers'
 import { useEffect } from 'react'
 import { useState } from 'react'
-import abiInterface  from './../public/artifacts/contracts/MetaMessage.sol/MetaMessage.json'
 
-
+import abi from "../public/artifacts/usdtABI.json"
 
 export default function Home() {
-    const[message,setMessage]= useState("")
-    const[newMessage,setNewMessage]= useState("")
+
+  const[name,setName] = useState("")
+  const[symb,setSymb] = useState("")
+  const [userBlnc,setUserBlnc] = useState("")
+
+  const [block,setBlock] = useState("")
 
 
-    const connectWallet = async()=>{
-        const pro= await window.ethereum.request({method:"eth_requestAccounts"});
-        console.log(pro)
-    }
+  const[balance,setBalance]=useState("0")
+  const mainNetEndPoint = "https://mainnet.infura.io/v3/47b829e7e62f4ccfa9fe9dbd1bde1714"
 
-  const contractAddress = "0x6783F18A8Aab462c8251E7dC366be0749C59f1fa"
-const GetMetaverseMessage = async ()=>{
-    if(typeof window.ethereum !=="undefined"){
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const contract = new ethers.Contract(contractAddress,abiInterface.abi,provider)
-
-        try {
-            const msg = await contract.getMessage();
-            console.log(msg)
-            setMessage(msg)
-
-                } catch (error) {
-            console.log(error)
-        }
+  const provider = new ethers.providers.JsonRpcProvider(mainNetEndPoint)
 
 
+const tetherContractAddress =  "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+const userAccount = "0xA54fEabdB975422599E2eFd3e38aAdE2B3Fa8b34"
+const contract = new ethers.Contract(tetherContractAddress,abi,provider)
 
-    }else{
-        console.log("Please install metamask wallet")
+const fetchUSDT = async()=>{
+  const name = await contract.name()
+  const symbol = await contract.symbol()
+  const userBalance = await contract.balanceOf(userAccount)
 
-    }
+  setName(name)
+  setSymb(symbol)
+  setUserBlnc( userBalance)
 
+  const latestblock = await provider.getBlockNumber()
+
+  const transcations = await contract.queryFilter("Transfer",latestblock -2,latestblock)
+
+  console.log(transcations[0].address)
+  setBlock(latestblock)
 }
 
-const changeMessage =  async ()=>{
 
-   if(!newMessage)return;
-   if(typeof window.ethereum !=="undefined"){
-    await connectWallet();
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-
-    const signer = provider.getSigner()
-    const contract = new ethers.Contract(contractAddress,abiInterface.abi,signer)
-
-    try {
-        const changeMsg = await contract.changeMessage(newMessage);
-        await changeMsg.wait()
-        await GetMetaverseMessage()
-        setNewMessage("")
-            } catch (error) {
-        console.log(error)
-    }
+  useEffect(()=>{
+fetchUSDT()
+  },[])
 
 
 
-}else{
-    console.log("Please install metamask wallet")
-
-}
-
-}
 
   return (
     <div  className='m-5'>
-      <h2 className='btn btn-outline-info text-center'>Welceome to Metaverse Data Center </h2>
+      <h2 className='btn btn-outline-danger'>Welceome to fetch USDT</h2>
       <br/>
-      <button type="button" className="btn btn-danger" onClick={GetMetaverseMessage}>What is the message ???</button>
+      <h2 className='btn btn-outline-info'>conatract name is {name} </h2>
       <br/>
-
-{
-    message?      <div className='m-3'>
-    <div className="card">
-<div className="card-header">
-  Hello ""
-</div>
-<div className="card-body">
-  <blockquote className="blockquote mb-0">
-    <p>{message}</p>
-    <footer className="blockquote-footer">Let`s change teh metaverse message` <cite title="Source Title">Source Title</cite></footer>
-  </blockquote>
-</div>
-</div>
-    </div>
-:""
-}
-<h2 className='btn btn-outline-warning text-center'>You can change the Metaverse Message now by Small Fees </h2>
-      <br/>
-<div>
-<div class="input-group flex-nowrap">
-  <span class="input-group-text" id="addon-wrapping">@</span>
-  <input type="text" onChange={(e)=>setNewMessage(e.target.value)}
-  value={newMessage}
-
-   className="form-control" placeholder="Write your Message" aria-label="Username" aria-describedby="addon-wrapping"/>
-</div>
-</div>
+      <h2 className='btn btn-outline-success'>conatract Symbol is {symb} </h2>
 
 <br/>
-      <button type="button" className="btn btn-success"  onClick={changeMessage}>Pay and Save your Message</button>
-      <br/>
-
-
+<p className='text-white'>The User of {userAccount} address has Usdt Balance {userBlnc.toString()}</p>
+<br/>
+      <h2 className='btn btn-outline-success'>conatract latest block is {block} </h2>
 
     </div>
   )
